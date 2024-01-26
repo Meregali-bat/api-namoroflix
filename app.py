@@ -1,71 +1,53 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
+from pymongo import MongoClient
+from bson import json_util, ObjectId
+import json
+
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+mongo_connection_string = os.getenv('MONGO_CONNECTION_STRING')
+
 
 app = Flask(__name__)
 
-usuarios = [
-    {
-        'id': 1,
-        'nome': 'Manuel Gomes',
-        'idade': 23,
-        'genero': 'Masculino',
-        'sexualidade': 'Heterossexual',
-        'bio': 'Sou um rapaz que gosta de jogar futebol e de sair com os amigos.'
-    },
-    {
-        'id': 2,
-        'nome': 'Maria Silva',
-        'idade': 25,
-        'genero': 'Feminino',
-        'sexualidade': 'bissexual',
-        'bio': 'Sou uma pessoa que gosta de dançar e de sair com os amigos.'
-    },
-    {
-        'id': 3,
-        'nome': 'João Santos',
-        'idade': 27,
-        'genero': 'Masculino',
-        'sexualidade': 'Homossexual',
-        'bio': 'Não sou uma pessoa.'
-    },
-    {
-        'id': 4,
-        'nome': 'Ana Sousa',
-        'idade': 30,
-        'genero': 'Feminino',
-        'sexualidade': 'bissexual',
-        'bio': 'Sou uma pessoa.'
-    }
-]
+# Crie uma conexão com o MongoDB Atlas
+client = MongoClient(mongo_connection_string)
+
+# Selecione o banco de dados
+db = client['tinder2']
+
+# Selecione a coleção
+usuarios = db['usuarios']
 
 @app.route('/usuarios', methods=['GET'])
 def obter_usuarios():
-    return jsonify(usuarios)
+    usuarios_list = list(usuarios.find())
+    return Response(json.dumps(usuarios_list, default=json_util.default), mimetype='application/json')
 
-@app.route('/usuario/<int:id>', methods=['GET'])
+@app.route('/usuario/<string:id>', methods=['GET'])
 def obter_usuario_id(id):
-    for usuario in usuarios:
-        if usuario['id'] == id:
-            return jsonify(usuario)
+    usuario = usuarios.find_one({'_id': ObjectId(id)})
+    if usuario:
+        return Response(json.dumps(usuario, default=json_util.default), mimetype='application/json')
 
-@app.route('/usuario/<int:id>', methods=['PUT'])
+@app.route('/usuario/<string:id>', methods=['PUT'])
 def editar_usuario(id):
     usuario_editado = request.get_json()
-    for indice, usuario in enumerate(usuarios):
-        if usuario.get('id') == id:
-            usuarios[indice].update(usuario_editado)
-            return jsonify(usuarios[indice])
+    usuarios.update_one({'_id': ObjectId(id)}, {'$set': usuario_editado})
+    return Response(json.dumps(usuarios.find_one({'_id': ObjectId(id)}), default=json_util.default), mimetype='application/json')
 
 @app.route('/usuarios', methods=['POST'])   
 def adicionar_usuario():
     novo_usuario = request.get_json()
-    usuarios.append(novo_usuario)
-    return jsonify(usuarios)
+    resultado = usuarios.insert_one(novo_usuario)
+    return Response(json.dumps({'_id': str(resultado.inserted_id)}), mimetype='application/json')
     
-@app.route('/usuario/<int:id>', methods=['DELETE'])    
+@app.route('/usuario/<string:id>', methods=['DELETE'])    
 def excluir_usuario(id):
-    for indice, usuario in enumerate(usuarios):
-        if usuario.get('id') == id:
-            del usuarios[indice]
-            return jsonify(usuarios)
+    usuarios.delete_one({'_id': ObjectId(id)})
+    usuarios_list = list(usuarios.find())
+    return Response(json.dumps(usuarios_list, default=json_util.default), mimetype='application/json')
     
 app.run(port=5000, host="localhost", debug=True)
