@@ -15,7 +15,7 @@ app = Flask(__name__)
 client = MongoClient(mongo_connection_string)
 
 # Selecione o banco de dados
-db = client['tinder2']
+db = client['tinder2-testes']
 
 # Selecione a coleção
 usuarios = db['usuarios']
@@ -48,3 +48,13 @@ def excluir_usuario(id):
     usuarios.delete_one({'_id': ObjectId(id)})
     usuarios_list = list(usuarios.find())
     return Response(json.dumps(usuarios_list, default=json_util.default), mimetype='application/json')
+
+
+@app.route('/autenticar', methods=['POST'])
+def autenticar_usuario():
+    credenciais = request.get_json()
+    usuario = usuarios.find_one({'email': credenciais['email'], 'senha': credenciais['senha']})
+    if usuario:
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False, error='Usuário ou senha inválidos'), 401
