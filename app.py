@@ -9,7 +9,6 @@ import os
 load_dotenv()
 mongo_connection_string = os.getenv('MONGO_CONNECTION_STRING')
 
-
 app = Flask(__name__)
 
 # Crie uma conexão com o MongoDB Atlas
@@ -49,5 +48,3 @@ def excluir_usuario(id):
     usuarios.delete_one({'_id': ObjectId(id)})
     usuarios_list = list(usuarios.find())
     return Response(json.dumps(usuarios_list, default=json_util.default), mimetype='application/json')
-    
-app.run(port=5000, host="localhost", debug=True)
