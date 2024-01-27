@@ -8,16 +8,6 @@ from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 import os
 
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-
-cloudinary.config( 
-  cloud_name = os.getenv("CLOUD_NAME"), 
-  api_key = os.getenv("API_KEY"), 
-  api_secret = os.getenv("API_SECRET") 
-)
-
 load_dotenv()
 mongo_connection_string = os.getenv('MONGO_CONNECTION_STRING')
 
@@ -25,13 +15,10 @@ app = Flask(__name__)
 
 CORS(app)
 
-# Crie uma conexão com o MongoDB Atlas
 client = MongoClient(mongo_connection_string)
 
-# Selecione o banco de dados
 db = client['tinder2-testes']
 
-# Selecione a coleção
 usuarios = db['usuarios']
 
 @cross_origin
@@ -55,6 +42,8 @@ def editar_usuario(id):
 @app.route('/cadastrar', methods=['POST'])   
 def adicionar_usuario():
     novo_usuario = request.get_json()
+    novo_usuario['likes'] = []
+    novo_usuario['matches'] = []
     resultado = usuarios.insert_one(novo_usuario)
     
     if resultado.inserted_id is not None:
@@ -79,5 +68,25 @@ def autenticar_usuario():
         return jsonify(success=True, usuario=usuario)
     else:
         return jsonify(success=False, error='Usuário ou senha inválidos'), 401
+
+@app.route('/usuario/<string:id>/like', methods=['POST'])
+def dar_like(id):
+    id_like = request.get_json()['id_like']
+    
+    usuarios.update_one({'_id': ObjectId(id)}, {'$push': {'likes': id_like}})
+    
+    usuario_like = usuarios.find_one({'_id': ObjectId(id_like)})
+    if usuario_like and 'likes' in usuario_like and id in usuario_like['likes']:
+        usuarios.update_one({'_id': ObjectId(id)}, {'$push': {'matches': id_like}})
+        usuarios.update_one({'_id': ObjectId(id_like)}, {'$push': {'matches': id}})
+        return jsonify(success=True, message='Match!')
+    
+    return jsonify(success=True, message='Like enviado')
+
+@app.route('/usuario/<string:id>/matches', methods=['GET'])
+def obter_matches(id):
+    usuario = usuarios.find_one({'_id': ObjectId(id)})
+    matches = [{'nome': match['nome'], 'idade': match['idade'], 'imagem': match['imagem']} for id_match in usuario['matches'] for match in usuarios.find({'_id': ObjectId(id_match)})]
+    return jsonify(matches)
 
 # app.run(port=5000, host="localhost", debug=True)
