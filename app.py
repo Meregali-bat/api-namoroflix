@@ -37,7 +37,7 @@ def editar_usuario(id):
     usuarios.update_one({'_id': ObjectId(id)}, {'$set': usuario_editado})
     return Response(json.dumps(usuarios.find_one({'_id': ObjectId(id)}), default=json_util.default), mimetype='application/json')
 
-@app.route('/usuarios', methods=['POST'])   
+@app.route('/cadastrar', methods=['POST'])   
 def adicionar_usuario():
     novo_usuario = request.get_json()
     resultado = usuarios.insert_one(novo_usuario)
