@@ -80,4 +80,4 @@ def autenticar_usuario():
     else:
         return jsonify(success=False, error='Usuário ou senha inválidos'), 401
 
-app.run(port=5000, host="localhost", debug=True)
+# app.run(port=5000, host="localhost", debug=True)
