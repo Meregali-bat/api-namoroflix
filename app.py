@@ -6,6 +6,16 @@ import json
 from dotenv import load_dotenv
 import os
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+cloudinary.config( 
+  cloud_name = os.getenv("CLOUD_NAME"), 
+  api_key = os.getenv("API_KEY"), 
+  api_secret = os.getenv("API_SECRET") 
+)
+
 load_dotenv()
 mongo_connection_string = os.getenv('MONGO_CONNECTION_STRING')
 
@@ -41,14 +51,17 @@ def editar_usuario(id):
 def adicionar_usuario():
     novo_usuario = request.get_json()
     resultado = usuarios.insert_one(novo_usuario)
-    return Response(json.dumps({'_id': str(resultado.inserted_id)}), mimetype='application/json')
+    
+    if resultado.inserted_id is not None:
+        return Response(json.dumps({'success': True, '_id': str(resultado.inserted_id)}), mimetype='application/json')
+    else:
+        return Response(json.dumps({'success': False, 'message': 'Falha ao cadastrar o usuário'}), mimetype='application/json', status=400)
     
 @app.route('/usuario/<string:id>', methods=['DELETE'])    
 def excluir_usuario(id):
     usuarios.delete_one({'_id': ObjectId(id)})
     usuarios_list = list(usuarios.find())
     return Response(json.dumps(usuarios_list, default=json_util.default), mimetype='application/json')
-
 
 @app.route('/autenticar', methods=['POST'])
 def autenticar_usuario():
