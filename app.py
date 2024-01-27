@@ -55,6 +55,8 @@ def autenticar_usuario():
     credenciais = request.get_json()
     usuario = usuarios.find_one({'email': credenciais['email'], 'senha': credenciais['senha']})
     if usuario:
-        return jsonify(success=True)
+        usuario['_id'] = str(usuario['_id'])
+        usuario.pop('senha', None)
+        return jsonify(success=True, usuario=usuario)
     else:
         return jsonify(success=False, error='Usuário ou senha inválidos'), 401
