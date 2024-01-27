@@ -3,6 +3,8 @@ from pymongo import MongoClient
 from bson import json_util, ObjectId
 import json
 
+from flask_cors import CORS, cross_origin
+
 from dotenv import load_dotenv
 import os
 
@@ -21,6 +23,8 @@ mongo_connection_string = os.getenv('MONGO_CONNECTION_STRING')
 
 app = Flask(__name__)
 
+CORS(app)
+
 # Crie uma conexão com o MongoDB Atlas
 client = MongoClient(mongo_connection_string)
 
@@ -30,6 +34,7 @@ db = client['tinder2-testes']
 # Selecione a coleção
 usuarios = db['usuarios']
 
+@cross_origin
 @app.route('/usuarios', methods=['GET'])
 def obter_usuarios():
     usuarios_list = list(usuarios.find())
@@ -63,6 +68,7 @@ def excluir_usuario(id):
     usuarios_list = list(usuarios.find())
     return Response(json.dumps(usuarios_list, default=json_util.default), mimetype='application/json')
 
+@cross_origin
 @app.route('/autenticar', methods=['POST'])
 def autenticar_usuario():
     credenciais = request.get_json()
@@ -73,3 +79,5 @@ def autenticar_usuario():
         return jsonify(success=True, usuario=usuario)
     else:
         return jsonify(success=False, error='Usuário ou senha inválidos'), 401
+
+app.run(port=5000, host="localhost", debug=True)
