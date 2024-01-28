@@ -98,4 +98,4 @@ def obter_usuarios_sem_match(id):
     usuarios_list = [{key: (str(value) if isinstance(value, ObjectId) else value) for key, value in usuario.items()} for usuario in usuarios_list]
     return jsonify(usuarios_list)
 
-app.run(port=5000, host="localhost", debug=True)
+# app.run(port=5000, host="localhost", debug=True)
