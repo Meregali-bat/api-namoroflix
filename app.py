@@ -73,12 +73,12 @@ def autenticar_usuario():
 def dar_like(id):
     id_like = request.get_json()['id_like']
     
-    usuarios.update_one({'_id': ObjectId(id)}, {'$push': {'likes': id_like}})
+    usuarios.update_one({'_id': ObjectId(id)}, {'$addToSet': {'likes': id_like}})
     
     usuario_like = usuarios.find_one({'_id': ObjectId(id_like)})
     if usuario_like and 'likes' in usuario_like and id in usuario_like['likes']:
-        usuarios.update_one({'_id': ObjectId(id)}, {'$push': {'matches': id_like}})
-        usuarios.update_one({'_id': ObjectId(id_like)}, {'$push': {'matches': id}})
+        usuarios.update_one({'_id': ObjectId(id)}, {'$addToSet': {'matches': id_like}})
+        usuarios.update_one({'_id': ObjectId(id_like)}, {'$addToSet': {'matches': id}})
         return jsonify(success=True, message='Match!')
     
     return jsonify(success=True, message='Like enviado')
@@ -98,4 +98,4 @@ def obter_usuarios_sem_match(id):
     usuarios_list = [{key: (str(value) if isinstance(value, ObjectId) else value) for key, value in usuario.items()} for usuario in usuarios_list]
     return jsonify(usuarios_list)
 
-# app.run(port=5000, host="localhost", debug=True)
+app.run(port=5000, host="localhost", debug=True)
