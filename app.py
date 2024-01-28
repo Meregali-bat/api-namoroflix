@@ -86,7 +86,16 @@ def dar_like(id):
 @app.route('/usuario/<string:id>/matches', methods=['GET'])
 def obter_matches(id):
     usuario = usuarios.find_one({'_id': ObjectId(id)})
-    matches = [{'nome': match['nome'], 'idade': match['idade'], 'imagem': match['imagem']} for id_match in usuario['matches'] for match in usuarios.find({'_id': ObjectId(id_match)})]
+    matches = [{'_id': str(match['_id']), 'nome': match['nome'], 'idade': match['idade'], 'imagem': match['imagem']} for id_match in usuario['matches'] for match in usuarios.find({'_id': ObjectId(id_match)})]
     return jsonify(matches)
 
-# app.run(port=5000, host="localhost", debug=True)
+
+@app.route('/usuario/<string:id>/sem-match', methods=['GET'])
+def obter_usuarios_sem_match(id):
+    usuario = usuarios.find_one({'_id': ObjectId(id)})
+    matches_ids = [ObjectId(id_match) for id_match in usuario['matches']]
+    usuarios_list = list(usuarios.find({'_id': {'$ne': ObjectId(id), '$nin': matches_ids}}))
+    usuarios_list = [{key: (str(value) if isinstance(value, ObjectId) else value) for key, value in usuario.items()} for usuario in usuarios_list]
+    return jsonify(usuarios_list)
+
+app.run(port=5000, host="localhost", debug=True)
