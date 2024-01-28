@@ -98,4 +98,20 @@ def obter_usuarios_sem_match(id):
     usuarios_list = [{key: (str(value) if isinstance(value, ObjectId) else value) for key, value in usuario.items()} for usuario in usuarios_list]
     return jsonify(usuarios_list)
 
+@app.route('/usuarios/sem-imagem', methods=['DELETE'])
+def apagar_usuarios_sem_imagem():
+    resultado = usuarios.delete_many({'imagem': {'$in': [None, '']}})
+    return jsonify(success=True, message=f'{resultado.deleted_count} usuários apagados')
+
+@app.route('/usuario/<string:id>/remover-duplicados', methods=['PUT'])
+def remover_duplicados(id):
+    usuario = usuarios.find_one({'_id': ObjectId(id)})
+    if usuario:
+        likes_unicos = list(set(usuario.get('likes', [])))
+        matches_unicos = list(set(usuario.get('matches', [])))
+        usuarios.update_one({'_id': ObjectId(id)}, {'$set': {'likes': likes_unicos, 'matches': matches_unicos}})
+        return jsonify(success=True, message='Likes e matches duplicados removidos')
+    else:
+        return jsonify(success=False, message='Usuário não encontrado')
+
 # app.run(port=5000, host="localhost", debug=True)
